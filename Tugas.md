@@ -48,3 +48,23 @@
             "createdAt": "2026-08-17T13:51:51.584Z",
             "updatedAt": "2026-08-17T13:51:51.584Z"
         }
+
+
+
+## Screenshots
+### UI
+![Tampilan Awal CS Bot](images/tampilan-awal.png)
+
+
+![Pengujian Chatbot](images/UI-chat.png)
+
+
+### Fitur Riwayat Obrolan
+![Memuat Riwayat Percakapan](images/riwayat.png)
+
+
+### Fitur Simpan Riwayat Dimatikan
+![Mengubah Opsi Simpan Riwayat](images/riwayat-dimati.png)
+
+
+![Percakapan Tanpa Menyimpan Riwayat](images/riwayat-mati-berhasil.png)
