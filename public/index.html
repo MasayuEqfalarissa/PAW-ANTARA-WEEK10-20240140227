@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CS Bot - Customer Service AI</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Marked.js untuk render markdown dari Gemini -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col items-center justify-center p-4">
+
+  <div class="w-full max-w-2xl bg-white rounded-xl shadow-md flex flex-col h-[85vh]">
+    
+    <!-- Header -->
+    <div class="p-4 bg-indigo-600 text-white font-bold rounded-t-xl flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+        <span>CS Bot Toko Kita</span>
+      </div>
+      <button id="btnLoadHistory" class="text-xs bg-indigo-700 hover:bg-indigo-800 px-3 py-1.5 rounded transition">
+        Muat Riwayat
+      </button>
+    </div>
+
+    <!-- Chat Box -->
+    <div id="chatBox" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50">
+      <div class="bg-indigo-100 text-indigo-900 p-3 rounded-lg max-w-[80%] text-sm self-start">
+        Halo! Ada yang bisa saya bantu terkait produk toko kami hari ini?
+      </div>
+    </div>
+
+    <!-- Options & Input Form -->
+    <div class="p-4 border-t bg-white rounded-b-xl">
+      <!-- Checkbox Allow History -->
+      <div class="flex items-center mb-3">
+        <input type="checkbox" id="allowHistory" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked>
+        <label for="allowHistory" class="ml-2 text-xs text-gray-600">
+          Izinkan sistem menyimpan riwayat percakapan
+        </label>
+      </div>
+
+      <!-- Form Send -->
+      <form id="chatForm" class="flex space-x-2">
+        <input 
+          type="text" 
+          id="userInput" 
+          placeholder="Tanyakan sesuatu tentang produk..." 
+          class="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          required
+        />
+        <button 
+          type="submit" 
+          class="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition"
+        >
+          Kirim
+        </button>
+      </form>
+    </div>
+
+  </div>
+
+  <script>
+    const sessionId = "user_123";
+    const chatBox = document.getElementById("chatBox");
+    const chatForm = document.getElementById("chatForm");
+    const userInput = document.getElementById("userInput");
+    const allowHistory = document.getElementById("allowHistory");
+    const btnLoadHistory = document.getElementById("btnLoadHistory");
+
+    function appendMessage(sender, text) {
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add("p-3", "rounded-lg", "max-w-[80%]", "text-sm", "leading-relaxed");
+
+      if (sender === "user") {
+        msgDiv.classList.add("bg-indigo-600", "text-white", "ml-auto", "whitespace-pre-wrap");
+        msgDiv.textContent = text;
+      } else {
+        msgDiv.classList.add("bg-gray-200", "text-gray-800", "mr-auto", "prose", "prose-sm");
+        
+        msgDiv.innerHTML = marked.parse(text);
+      }
+
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    chatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      appendMessage("user", message);
+      userInput.value = "";
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message,
+            allow_history: allowHistory.checked,
+            session_id: sessionId
+          })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          appendMessage("bot", result.data.reply);
+        } else {
+          appendMessage("bot", "Gagal memproses pesan: " + result.message);
+        }
+      } catch (err) {
+        appendMessage("bot", "Terjadi kesalahan koneksi ke server.");
+      }
+    });
+
+    btnLoadHistory.addEventListener("click", async () => {
+      try {
+        const response = await fetch(`/api/chat/history?session_id=${sessionId}`);
+        const result = await response.json();
+
+        if (result.success && result.data.length > 0) {
+          chatBox.innerHTML = "";
+          result.data.forEach((chat) => {
+            appendMessage(chat.sender, chat.message);
+          });
+        } else {
+          alert("Belum ada riwayat percakapan tersimpan.");
+        }
+      } catch (err) {
+        alert("Gagal mengambil riwayat.");
+      }
+    });
+  </script>
+</body>
+</html>
